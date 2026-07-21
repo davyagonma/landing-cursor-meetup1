@@ -1,0 +1,20 @@
+{
+  "app": "cursor-benin-meetup",
+  "domain": "TBD",
+  "phase": "phase-1-landing-badges",
+  "status": "in-progress",
+  "version": "0.1.0",
+  "last_update": "2026-07-21",
+  "owner": "cursor-community-benin",
+  "client": "cursor-community-benin",
+  "progress": {
+    "setup": "done",
+    "auth": "n/a",
+    "features": "in-progress",
+    "docker": "n/a",
+    "tests": "placeholder",
+    "deploy": "todo"
+  },
+  "blockers": [],
+  "next_milestone": "Vercel preview + assets speakers réels + URLs sociales"
+}
