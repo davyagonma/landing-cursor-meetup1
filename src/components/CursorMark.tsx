@@ -1,11 +1,53 @@
-export function CursorMark({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden>
-      <path
-        fill="currentColor"
-        d="M4 4h10l6 6v10H4V4zm10 1.5V10h4.5L14 5.5zM6 8v10h12V11h-6V8H6z"
+import Image from "next/image";
+
+type Variant = "lockup" | "cube";
+
+/**
+ * Official Cursor brand marks from cursor.com/brand kit.
+ * On dark UI use *_DARK assets (fill #edecec). Do not invent lockups.
+ * Clearance: keep modest size with breathing room (~1 cube width).
+ */
+export function CursorLogo({
+  variant = "lockup",
+  className,
+  height = 28,
+  priority = false,
+}: {
+  variant?: Variant;
+  className?: string;
+  height?: number;
+  priority?: boolean;
+}) {
+  if (variant === "cube") {
+    const w = Math.round(height * (466.73 / 532.09));
+    return (
+      <Image
+        src="/brand/cube-2d-dark.svg"
+        alt="Cursor"
+        width={w}
+        height={height}
+        className={className}
+        priority={priority}
+        unoptimized
       />
-      <path fill="currentColor" d="M11 13l5 2.2-3.4 1.1L11 19.5 11 13z" />
-    </svg>
+    );
+  }
+
+  const w = Math.round(height * (2238.7 / 532.09));
+  return (
+    <Image
+      src="/brand/lockup-horizontal-2d-dark.svg"
+      alt="Cursor"
+      width={w}
+      height={height}
+      className={className}
+      priority={priority}
+      unoptimized
+    />
   );
+}
+
+/** @deprecated Use CursorLogo — kept as alias during migration */
+export function CursorMark({ className }: { className?: string }) {
+  return <CursorLogo variant="cube" height={24} className={className} />;
 }

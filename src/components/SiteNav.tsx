@@ -3,7 +3,7 @@
 import { List, X } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { event } from "@/data/event";
-import { CursorMark } from "./CursorMark";
+import { CursorLogo } from "./CursorMark";
 
 const links = [
   { href: "#programme", label: "Programme" },
@@ -30,9 +30,8 @@ export function SiteNav() {
       }`}
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 md:h-[72px] md:px-6">
-        <a href="#top" className="flex items-center gap-2 text-white">
-          <CursorMark className="h-6 w-6" />
-          <span className="font-display text-sm font-bold tracking-[0.14em]">CURSOR</span>
+        <a href="#top" className="flex items-center py-2" aria-label="Cursor">
+          <CursorLogo variant="lockup" height={22} priority className="h-[22px] w-auto" />
         </a>
 
         <nav className="hidden items-center gap-8 md:flex">

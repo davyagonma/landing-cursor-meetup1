@@ -2,7 +2,7 @@
 
 import { galleryBadges } from "@/data/gallery";
 import { event } from "@/data/event";
-import { CursorMark } from "./CursorMark";
+import { CursorLogo } from "./CursorMark";
 import { Reveal } from "./Reveal";
 
 export function GallerySection() {
@@ -33,9 +33,8 @@ export function GallerySection() {
 function MiniBadge({ photo, name }: { photo: string; name: string }) {
   return (
     <div className="grid-bg overflow-hidden border border-white/10 bg-black">
-      <div className="flex items-center justify-center gap-1.5 pt-4 text-white">
-        <CursorMark className="h-3.5 w-3.5" />
-        <span className="font-display text-[10px] font-bold tracking-[0.14em]">CURSOR</span>
+      <div className="flex items-center justify-center pt-4">
+        <CursorLogo variant="lockup" height={14} className="h-3.5 w-auto" />
       </div>
       <div className="px-4 pt-2">
         <p className="font-display text-sm font-bold text-white">Cursor Bénin</p>

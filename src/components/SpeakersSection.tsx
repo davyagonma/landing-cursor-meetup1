@@ -5,7 +5,7 @@ import { CalendarBlank, Clock, MapPin } from "@phosphor-icons/react";
 import { event } from "@/data/event";
 import { speakers } from "@/data/speakers";
 import { lumaQrUrl } from "@/lib/qr";
-import { CursorMark } from "./CursorMark";
+import { CursorLogo } from "./CursorMark";
 import { Reveal } from "./Reveal";
 
 export function SpeakersSection() {
@@ -42,9 +42,8 @@ function SpeakerCard({
 
   return (
     <article className="grid-bg overflow-hidden rounded-[20px] border border-cursor-orange/80 bg-black">
-      <div className="flex items-center justify-center gap-2 px-4 pt-5 text-white">
-        <CursorMark className="h-4 w-4" />
-        <span className="font-display text-[11px] font-bold tracking-[0.16em]">CURSOR</span>
+      <div className="flex items-center justify-center px-4 pt-5">
+        <CursorLogo variant="lockup" height={16} className="h-4 w-auto" />
       </div>
 
       <div className="px-4 pt-3">

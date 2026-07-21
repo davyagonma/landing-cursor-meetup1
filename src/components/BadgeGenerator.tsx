@@ -11,7 +11,7 @@ import { toPng } from "html-to-image";
 import { useCallback, useRef, useState } from "react";
 import { event } from "@/data/event";
 import { lumaQrUrl } from "@/lib/qr";
-import { CursorMark } from "./CursorMark";
+import { CursorLogo } from "./CursorMark";
 import { Reveal } from "./Reveal";
 
 export function BadgeGenerator() {
@@ -127,9 +127,8 @@ function JySeraiBadge({
       </div>
 
       <div className="relative flex h-full flex-col px-5 pb-0 pt-5 sm:px-6 sm:pt-6">
-        <div className="flex items-center justify-center gap-2">
-          <CursorMark className="h-5 w-5" />
-          <span className="font-display text-xs font-bold tracking-[0.18em]">CURSOR</span>
+        <div className="flex items-center justify-center">
+          <CursorLogo variant="lockup" height={18} className="h-[18px] w-auto" />
         </div>
 
         <div className="mt-4">

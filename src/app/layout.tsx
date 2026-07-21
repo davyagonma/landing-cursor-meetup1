@@ -18,6 +18,13 @@ export const metadata: Metadata = {
   title: "Cursor Bénin Meetup 2026",
   description:
     "Meetup Cursor Community Bénin — agents IA, démos live, panels et badges J’y serai. 25 juillet 2026 à SOROC ZOGBO.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/brand/icons/app-icon-2d-dark.png", type: "image/png" },
+    ],
+    apple: [{ url: "/brand/icons/app-icon-2d-dark.png" }],
+  },
 };
 
 export default function RootLayout({

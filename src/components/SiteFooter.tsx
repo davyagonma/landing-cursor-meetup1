@@ -2,18 +2,15 @@
 
 import { FacebookLogo, LinkedinLogo } from "@phosphor-icons/react";
 import { event } from "@/data/event";
-import { CursorMark } from "./CursorMark";
+import { CursorLogo } from "./CursorMark";
 
 export function SiteFooter() {
   return (
     <footer className="border-t border-white/10">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-12 md:flex-row md:items-center md:justify-between md:px-6">
-        <div className="flex items-center gap-2 text-white">
-          <CursorMark className="h-5 w-5" />
-          <div>
-            <p className="font-display text-sm font-bold tracking-[0.12em]">CURSOR</p>
-            <p className="text-xs text-white/55">{event.community}</p>
-          </div>
+        <div className="text-white">
+          <CursorLogo variant="lockup" height={22} className="h-[22px] w-auto" />
+          <p className="mt-2 text-xs text-white/55">{event.community}</p>
         </div>
 
         <div className="flex items-center gap-4">

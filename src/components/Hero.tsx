@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import { event } from "@/data/event";
-import { CursorMark } from "./CursorMark";
+import { CursorLogo } from "./CursorMark";
 import { Reveal } from "./Reveal";
 
 export function Hero() {
@@ -20,9 +20,8 @@ export function Hero() {
 
       <div className="relative z-10 mx-auto w-full max-w-6xl px-4 md:px-6">
         <Reveal>
-          <div className="mb-8 flex items-center gap-2 text-white md:mb-10">
-            <CursorMark className="h-7 w-7" />
-            <span className="font-display text-base font-bold tracking-[0.18em]">CURSOR</span>
+          <div className="mb-8 md:mb-10">
+            <CursorLogo variant="lockup" height={32} priority className="h-8 w-auto md:h-9" />
           </div>
         </Reveal>
 
