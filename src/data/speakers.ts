@@ -1,3 +1,65 @@
+/**
+ * Flyers designer pour animateurs / speakers / panélistes.
+ * Pour l’instant : même placeholder `flyer-animateur.jpg` pour tous.
+ * Remplacer `flyerSrc` par le fichier designer dès réception
+ * (ex. `/speakers/obed-agbohoun.jpg`).
+ */
+export type SpeakerFlyer = {
+  id: string;
+  name: string;
+  roleLabel: string;
+  /** Chemin public vers le flyer JPG/PNG fourni par le designer */
+  flyerSrc: string;
+};
+
+export const PLACEHOLDER_ANIMATEUR_FLYER = "/templates/flyer-animateur.jpg";
+
+export const speakerFlyers: SpeakerFlyer[] = [
+  {
+    id: "obed",
+    name: "Obed S. AGBOHOUN",
+    roleLabel: "Animateur",
+    flyerSrc: PLACEHOLDER_ANIMATEUR_FLYER,
+  },
+  {
+    id: "regis",
+    name: "Régis K.",
+    roleLabel: "Speaker",
+    flyerSrc: PLACEHOLDER_ANIMATEUR_FLYER,
+  },
+  {
+    id: "ezechiel",
+    name: "Ezéchiel A.",
+    roleLabel: "Panéliste",
+    flyerSrc: PLACEHOLDER_ANIMATEUR_FLYER,
+  },
+  {
+    id: "chaldrak",
+    name: "Chaldrak D.",
+    roleLabel: "Panéliste",
+    flyerSrc: PLACEHOLDER_ANIMATEUR_FLYER,
+  },
+  {
+    id: "cisse",
+    name: "Cissé T.",
+    roleLabel: "Panéliste",
+    flyerSrc: PLACEHOLDER_ANIMATEUR_FLYER,
+  },
+  {
+    id: "davy",
+    name: "Davy A.",
+    roleLabel: "Animateur",
+    flyerSrc: PLACEHOLDER_ANIMATEUR_FLYER,
+  },
+  {
+    id: "brice",
+    name: "Brice G.",
+    roleLabel: "Speaker",
+    flyerSrc: PLACEHOLDER_ANIMATEUR_FLYER,
+  },
+];
+
+/** @deprecated Ancien modèle carte générée — conservé pour référence */
 export type Speaker = {
   id: string;
   name: string;
@@ -8,57 +70,5 @@ export type Speaker = {
   featured?: boolean;
 };
 
-/** Placeholders — remplacer par vraies photos plus tard */
-export const speakers: Speaker[] = [
-  {
-    id: "obed",
-    name: "Obed S. AGBOHOUN",
-    roleLabel: "Animateur",
-    title: "Développeur full-stack",
-    subtitle: "Ambassadeur fata & lead TCC UAC",
-    photo: "https://picsum.photos/seed/cursor-obed/640/800",
-    featured: true,
-  },
-  {
-    id: "regis",
-    name: "Régis K.",
-    roleLabel: "Speaker",
-    title: "Keynote & Nouveautés Cursor",
-    photo: "https://picsum.photos/seed/cursor-regis/640/800",
-  },
-  {
-    id: "ezechiel",
-    name: "Ezéchiel A.",
-    roleLabel: "Panéliste",
-    title: "Expert technique",
-    photo: "https://picsum.photos/seed/cursor-ezechiel/640/800",
-  },
-  {
-    id: "chaldrak",
-    name: "Chaldrak D.",
-    roleLabel: "Panéliste",
-    title: "Développeur senior",
-    photo: "https://picsum.photos/seed/cursor-chaldrak/640/800",
-  },
-  {
-    id: "cisse",
-    name: "Cissé T.",
-    roleLabel: "Panéliste",
-    title: "Session avancée Cursor",
-    photo: "https://picsum.photos/seed/cursor-cisse/640/800",
-  },
-  {
-    id: "davy",
-    name: "Davy A.",
-    roleLabel: "Animateur",
-    title: "Communauté Cursor Bénin",
-    photo: "https://picsum.photos/seed/cursor-davy/640/800",
-  },
-  {
-    id: "brice",
-    name: "Brice G.",
-    roleLabel: "Speaker",
-    title: "Talk Inspiration",
-    photo: "https://picsum.photos/seed/cursor-brice/640/800",
-  },
-];
+/** @deprecated */
+export const speakers: Speaker[] = [];

@@ -7,7 +7,7 @@ import { CursorLogo } from "./CursorMark";
 
 const links = [
   { href: "#programme", label: "Programme" },
-  { href: "#intervenants", label: "Intervenants" },
+  // { href: "#intervenants", label: "Intervenants" }, // réactiver avec SpeakersSection
   { href: "#badge", label: "Badge" },
   { href: "#galerie", label: "Galerie" },
 ];

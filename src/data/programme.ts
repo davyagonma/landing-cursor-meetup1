@@ -4,8 +4,6 @@ export type ProgrammeSlot = {
   title: string;
   description?: string;
   bullets?: string[];
-  speakers?: string[];
-  role?: string;
   kind: "session" | "break" | "panel" | "workshop";
 };
 
@@ -27,8 +25,6 @@ export const programme: ProgrammeSlot[] = [
       "Passage du développeur classique à l’AI Engineer",
       "Impact sur les carrières et les entreprises",
     ],
-    speakers: ["Régis K."],
-    role: "Speaker",
     kind: "session",
   },
   {
@@ -48,8 +44,6 @@ export const programme: ProgrammeSlot[] = [
     time: "10h15 – 11h00",
     title: "Panel d’experts",
     description: "Les développeurs seront-ils remplacés par l’IA ?",
-    speakers: ["Ezéchiel A.", "Chaldrak D.", "Cissé T."],
-    role: "Panélistes · Animateur : Obed A.",
     kind: "panel",
   },
   {
@@ -69,8 +63,6 @@ export const programme: ProgrammeSlot[] = [
       "Revue de code",
       "Productivité d’équipe",
     ],
-    speakers: ["M. Cissé"],
-    role: "Animateur",
     kind: "session",
   },
   {
@@ -79,8 +71,6 @@ export const programme: ProgrammeSlot[] = [
     title: "Atelier collaboratif",
     description: "Travail en groupe autour de cas réels",
     bullets: ["Fintech", "HealthTech", "EdTech", "Agritech"],
-    speakers: ["Davy", "Régis", "Obed"],
-    role: "Animateurs",
     kind: "workshop",
   },
   {
@@ -95,8 +85,6 @@ export const programme: ProgrammeSlot[] = [
       "Rules & Skills",
       "Parallel Agents",
     ],
-    speakers: ["Régis K."],
-    role: "Animateur",
     kind: "session",
   },
   {
@@ -105,8 +93,6 @@ export const programme: ProgrammeSlot[] = [
     title: "Talk Inspiration",
     description:
       "Comment un développeur africain peut multiplier son impact grâce à l’IA",
-    speakers: ["Brice G."],
-    role: "Speaker",
     kind: "session",
   },
   {
@@ -119,8 +105,6 @@ export const programme: ProgrammeSlot[] = [
       "Opportunités de collaboration",
       "Présentation de la core team",
     ],
-    speakers: ["Davy A."],
-    role: "Animateur",
     kind: "session",
   },
 ];

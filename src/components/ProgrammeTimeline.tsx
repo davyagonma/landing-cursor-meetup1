@@ -56,12 +56,6 @@ export function ProgrammeTimeline() {
                           ))}
                         </ul>
                       )}
-                      {(slot.speakers || slot.role) && (
-                        <p className="mt-3 text-sm text-white/80">
-                          {slot.role ? `${slot.role}` : ""}
-                          {slot.speakers ? ` · ${slot.speakers.join(", ")}` : ""}
-                        </p>
-                      )}
                     </div>
 
                     <span className="absolute left-[11px] top-1.5 h-2.5 w-2.5 rounded-full bg-cursor-orange ring-4 ring-black md:left-1/2 md:-translate-x-1/2" />

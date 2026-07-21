@@ -6,22 +6,44 @@ import {
   DownloadSimple,
   Image as ImageIcon,
   MapPin,
+  X,
 } from "@phosphor-icons/react";
 import { toPng } from "html-to-image";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { event } from "@/data/event";
-import { lumaQrUrl } from "@/lib/qr";
-import { CursorLogo } from "./CursorMark";
+import { lumaQrDataUrl } from "@/lib/qr";
+import { publishBadge } from "@/lib/supabase";
 import { Reveal } from "./Reveal";
 
 export function BadgeGenerator() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [pendingDataUrl, setPendingDataUrl] = useState<string | null>(null);
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [publishBusy, setPublishBusy] = useState(false);
+  const [publishMsg, setPublishMsg] = useState<string | null>(null);
   const badgeRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    lumaQrDataUrl(event.lumaUrl, 160)
+      .then((url) => {
+        if (!cancelled) setQrDataUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) setQrDataUrl(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const onFile = (file: File | null) => {
     setError(null);
+    setPublishMsg(null);
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       setError("Choisis une image (JPG, PNG, WebP).");
@@ -31,33 +53,88 @@ export function BadgeGenerator() {
       setError("Image trop lourde (max 8 Mo).");
       return;
     }
-    const url = URL.createObjectURL(file);
-    setPhoto((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return url;
-    });
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : null;
+      setPhoto((prev) => {
+        if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+        return result;
+      });
+    };
+    reader.onerror = () => setError("Impossible de lire l’image.");
+    reader.readAsDataURL(file);
   };
+
+  const captureBadge = useCallback(async () => {
+    if (!badgeRef.current) throw new Error("Badge introuvable");
+    // Wait a frame so fonts/images settle
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    return toPng(badgeRef.current, {
+      cacheBust: true,
+      pixelRatio: 2,
+      backgroundColor: "#000000",
+      includeQueryParams: true,
+      preferredFontFormat: "woff2",
+      filter: (node) => {
+        if (!(node instanceof HTMLElement)) return true;
+        // Skip broken external nodes if any
+        return !node.dataset?.skipExport;
+      },
+    });
+  }, []);
 
   const download = useCallback(async () => {
     if (!badgeRef.current || !photo) return;
     setBusy(true);
     setError(null);
+    setPublishMsg(null);
     try {
-      const dataUrl = await toPng(badgeRef.current, {
-        cacheBust: true,
-        pixelRatio: 2,
-        backgroundColor: "#000000",
-      });
+      const dataUrl = await captureBadge();
       const a = document.createElement("a");
       a.href = dataUrl;
       a.download = "cursor-benin-jy-serai.png";
+      document.body.appendChild(a);
       a.click();
-    } catch {
-      setError("Échec du téléchargement. Réessaie.");
+      a.remove();
+      setPendingDataUrl(dataUrl);
+      setShowPublishModal(true);
+    } catch (err) {
+      console.error("badge export failed", err);
+      setError("Échec du téléchargement. Réessaie avec une autre photo.");
     } finally {
       setBusy(false);
     }
-  }, [photo]);
+  }, [photo, captureBadge]);
+
+  const handlePublishChoice = async (isPublic: boolean) => {
+    if (!pendingDataUrl) {
+      setShowPublishModal(false);
+      return;
+    }
+    setPublishBusy(true);
+    setPublishMsg(null);
+    const result = await publishBadge({
+      dataUrl: pendingDataUrl,
+      displayName: displayName.trim() || undefined,
+      isPublic,
+    });
+    setPublishBusy(false);
+    if (!result.ok) {
+      setPublishMsg(
+        isPublic
+          ? `Impossible de publier : ${result.error}`
+          : `Badge enregistré en privé échoué : ${result.error}`,
+      );
+      return;
+    }
+    setShowPublishModal(false);
+    setPendingDataUrl(null);
+    setPublishMsg(
+      isPublic
+        ? "Merci ! Ton badge sera visible dans la galerie."
+        : "OK, ton badge reste privé (non affiché sur le site).",
+    );
+  };
 
   return (
     <section id="badge" className="scroll-mt-24 py-20 md:py-28">
@@ -86,9 +163,12 @@ export function BadgeGenerator() {
               />
             </label>
             {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+            {publishMsg && (
+              <p className="mt-3 text-sm text-cursor-orange">{publishMsg}</p>
+            )}
             <button
               type="button"
-              disabled={!photo || busy}
+              disabled={!photo || busy || !qrDataUrl}
               onClick={download}
               className="mt-5 inline-flex items-center gap-2 rounded-md bg-cursor-orange px-5 py-3 text-sm font-semibold text-black transition enabled:hover:brightness-110 enabled:active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -99,11 +179,75 @@ export function BadgeGenerator() {
 
           <Reveal delay={0.1}>
             <div className="mx-auto w-full max-w-[420px]">
-              <JySeraiBadge refEl={badgeRef} photo={photo} />
+              <JySeraiBadge
+                refEl={badgeRef}
+                photo={photo}
+                qrDataUrl={qrDataUrl}
+              />
             </div>
           </Reveal>
         </div>
       </div>
+
+      {showPublishModal && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="publish-title"
+        >
+          <div className="relative w-full max-w-md rounded-2xl border border-white/15 bg-[#0a0a0a] p-6 text-white shadow-xl">
+            <button
+              type="button"
+              className="absolute right-3 top-3 text-white/60 hover:text-white"
+              aria-label="Fermer"
+              onClick={() => {
+                setShowPublishModal(false);
+                void handlePublishChoice(false);
+              }}
+              disabled={publishBusy}
+            >
+              <X size={20} />
+            </button>
+            <h3 id="publish-title" className="font-display text-xl font-bold">
+              Afficher ton badge sur le site ?
+            </h3>
+            <p className="mt-2 text-sm text-white/65">
+              Après le téléchargement, tu peux le publier dans la galerie « Ils y
+              seront ». Sinon il reste privé.
+            </p>
+            <label className="mt-4 block text-sm text-white/80">
+              Prénom ou pseudo (optionnel)
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className="mt-1.5 w-full rounded-md border border-white/20 bg-black px-3 py-2 text-white outline-none focus:border-cursor-orange"
+                placeholder="Ex. Amina"
+                maxLength={40}
+              />
+            </label>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <button
+                type="button"
+                disabled={publishBusy}
+                onClick={() => void handlePublishChoice(true)}
+                className="rounded-md bg-cursor-orange px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-50"
+              >
+                {publishBusy ? "Envoi…" : "Oui, afficher"}
+              </button>
+              <button
+                type="button"
+                disabled={publishBusy}
+                onClick={() => void handlePublishChoice(false)}
+                className="rounded-md border border-white/25 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                Non, garder privé
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -111,16 +255,22 @@ export function BadgeGenerator() {
 function JySeraiBadge({
   refEl,
   photo,
+  qrDataUrl,
 }: {
   refEl: React.RefObject<HTMLDivElement | null>;
   photo: string | null;
+  qrDataUrl: string | null;
 }) {
-  const qr = lumaQrUrl(event.lumaUrl, 140);
-
   return (
     <div
       ref={refEl}
-      className="grid-bg relative aspect-[4/5] w-full overflow-hidden border border-white/10 bg-black text-white"
+      className="relative aspect-[4/5] w-full overflow-hidden border border-white/10 bg-black text-white"
+      style={{
+        backgroundColor: "#000000",
+        backgroundImage:
+          "linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px)",
+        backgroundSize: "28px 28px",
+      }}
     >
       <div className="absolute inset-0 opacity-[0.07]">
         <div className="absolute right-6 top-1/3 h-48 w-48 rotate-12 border border-white" />
@@ -128,36 +278,61 @@ function JySeraiBadge({
 
       <div className="relative flex h-full flex-col px-5 pb-0 pt-5 sm:px-6 sm:pt-6">
         <div className="flex items-center justify-center">
-          <CursorLogo variant="lockup" height={18} className="h-[18px] w-auto" />
+          {/* plain img for reliable html-to-image capture */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/lockup-horizontal-2d-dark.svg"
+            alt="Cursor"
+            height={18}
+            style={{ height: 18, width: "auto" }}
+            crossOrigin="anonymous"
+          />
         </div>
 
         <div className="mt-4">
-          <p className="font-display text-xl font-bold sm:text-2xl">Cursor Bénin</p>
-          <p className="font-display text-3xl font-bold leading-none sm:text-4xl">
-            <span className="text-cursor-orange">Meetup</span>{" "}
-            <span>2026</span>
+          <p
+            className="font-display text-xl font-bold sm:text-2xl"
+            style={{ color: "#ffffff" }}
+          >
+            Cursor Bénin
           </p>
-          <div className="mt-2 h-1.5 w-36 bg-cursor-orange sm:w-44" />
+          <p className="font-display text-3xl font-bold leading-none sm:text-4xl">
+            <span style={{ color: "#ff6600" }}>Meetup</span>{" "}
+            <span style={{ color: "#ffffff" }}>2026</span>
+          </p>
+          <div
+            className="mt-2 h-1.5 w-36 sm:w-44"
+            style={{ backgroundColor: "#ff6600" }}
+          />
         </div>
 
         <div className="mt-6 flex flex-1 items-start gap-3 sm:gap-4">
           <div
-            className="relative aspect-square w-[48%] shrink-0 overflow-hidden border border-cursor-orange bg-white/5"
+            className="relative aspect-square w-[48%] shrink-0 overflow-hidden bg-white/5"
             style={{
               borderRadius: "0 2.5rem 0 2.5rem",
+              border: "1px solid #ff6600",
             }}
           >
             {photo ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={photo} alt="" className="h-full w-full object-cover" />
             ) : (
-              <div className="flex h-full items-center justify-center p-4 text-center text-xs text-white/40">
+              <div
+                className="flex h-full items-center justify-center p-4 text-center text-xs"
+                style={{ color: "rgba(255,255,255,0.4)" }}
+              >
                 Ta photo ici
               </div>
             )}
           </div>
           <div className="flex flex-1 flex-col justify-center pt-4">
-            <p className="font-script text-4xl leading-none sm:text-5xl">J’y serai</p>
+            <p
+              className="font-script text-4xl leading-none sm:text-5xl"
+              style={{ color: "#ffffff" }}
+            >
+              J’y serai
+            </p>
             <svg
               className="mt-2 w-28"
               viewBox="0 0 120 18"
@@ -180,39 +355,74 @@ function JySeraiBadge({
 
         <div className="mt-auto grid grid-cols-[auto_1fr_auto] items-end gap-3 pb-3 pt-4 sm:gap-4">
           <div className="flex flex-col items-start">
-            <CalendarBlank size={28} className="text-white" />
-            <p className="mt-1 text-xs text-white">{event.dateShort.month}</p>
-            <p className="font-display text-3xl font-bold leading-none text-cursor-orange">
+            <CalendarBlank size={28} color="#ffffff" />
+            <p className="mt-1 text-xs" style={{ color: "#ffffff" }}>
+              {event.dateShort.month}
+            </p>
+            <p
+              className="font-display text-3xl font-bold leading-none"
+              style={{ color: "#ff6600" }}
+            >
               {event.dateShort.day}
             </p>
-            <p className="text-xs text-white">{event.dateShort.year}</p>
+            <p className="text-xs" style={{ color: "#ffffff" }}>
+              {event.dateShort.year}
+            </p>
           </div>
 
           <div className="space-y-2 self-center text-[11px] sm:text-xs">
-            <p className="flex items-center gap-1.5 uppercase tracking-wide">
-              <MapPin size={14} className="text-cursor-orange" weight="fill" />
+            <p
+              className="flex items-center gap-1.5 uppercase tracking-wide"
+              style={{ color: "#ffffff" }}
+            >
+              <MapPin size={14} color="#ff6600" weight="fill" />
               {event.location}
             </p>
-            <p className="flex items-center gap-1.5">
-              <Clock size={14} className="text-cursor-orange" weight="fill" />
+            <p className="flex items-center gap-1.5" style={{ color: "#ffffff" }}>
+              <Clock size={14} color="#ff6600" weight="fill" />
               {event.timeLabel}
             </p>
           </div>
 
-          <div className="rounded-md border border-white/80 p-1.5">
-            <p className="mb-1 max-w-[72px] text-[8px] leading-tight text-white/85">
+          <div
+            className="rounded-md p-1.5"
+            style={{ border: "1px solid rgba(255,255,255,0.8)" }}
+          >
+            <p
+              className="mb-1 max-w-[72px] text-[8px] leading-tight"
+              style={{ color: "rgba(255,255,255,0.85)" }}
+            >
               Scannez le <strong>QR</strong> code pour vous inscrire
             </p>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={qr} alt="" width={64} height={64} className="mx-auto" />
+            {qrDataUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={qrDataUrl}
+                alt=""
+                width={64}
+                height={64}
+                className="mx-auto"
+              />
+            ) : (
+              <div className="mx-auto h-16 w-16 bg-white/10" />
+            )}
           </div>
         </div>
 
-        <div className="mx-[-1.25rem] flex items-center justify-center gap-2 bg-white py-2.5 text-[11px] font-medium text-black sm:mx-[-1.5rem]">
-          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-cursor-orange text-[9px] font-bold text-white">
+        <div
+          className="mx-[-1.25rem] flex items-center justify-center gap-2 py-2.5 text-[11px] font-medium sm:mx-[-1.5rem]"
+          style={{ backgroundColor: "#ffffff", color: "#000000" }}
+        >
+          <span
+            className="flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold"
+            style={{ backgroundColor: "#ff6600", color: "#ffffff" }}
+          >
             in
           </span>
-          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-cursor-orange text-[9px] font-bold text-white">
+          <span
+            className="flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold"
+            style={{ backgroundColor: "#ff6600", color: "#ffffff" }}
+          >
             f
           </span>
           <span>{event.community}</span>

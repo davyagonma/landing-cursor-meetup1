@@ -4,7 +4,7 @@ export type GalleryBadge = {
   photo: string;
 };
 
-/** Exemples « J’y serai » — placeholders jusqu’aux vrais assets */
+/** Exemples « J’y serai » — placeholders jusqu’aux vrais assets / DB */
 export const galleryBadges: GalleryBadge[] = [
   {
     id: "g1",

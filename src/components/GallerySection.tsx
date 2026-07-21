@@ -1,11 +1,17 @@
 "use client";
 
-import { galleryBadges } from "@/data/gallery";
 import { event } from "@/data/event";
+import type { GalleryBadge } from "@/data/gallery";
 import { CursorLogo } from "./CursorMark";
 import { Reveal } from "./Reveal";
 
-export function GallerySection() {
+export function GallerySection({
+  badges,
+  fromDatabase = false,
+}: {
+  badges: GalleryBadge[];
+  fromDatabase?: boolean;
+}) {
   return (
     <section id="galerie" className="scroll-mt-24 py-20 md:py-28">
       <div className="mx-auto max-w-6xl px-4 md:px-6">
@@ -14,19 +20,50 @@ export function GallerySection() {
             Ils y seront
           </h2>
           <p className="mt-3 max-w-2xl text-white/65">
-            Exemples de badges « J’y serai » (placeholders en attendant vos photos).
+            {fromDatabase
+              ? "Badges « J’y serai » publiés par la communauté."
+              : "Exemples de badges « J’y serai » (placeholders en attendant les publications)."}
           </p>
         </Reveal>
 
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {galleryBadges.map((g, i) => (
-            <Reveal key={g.id} delay={Math.min(i * 0.04, 0.2)}>
-              <MiniBadge photo={g.photo} name={g.name} />
-            </Reveal>
-          ))}
-        </div>
+        {badges.length === 0 ? (
+          <p className="mt-10 text-sm text-white/50">
+            Aucun badge public pour le moment. Génère le tien et choisis « Oui,
+            afficher ».
+          </p>
+        ) : (
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {badges.map((g, i) => (
+              <Reveal key={g.id} delay={Math.min(i * 0.04, 0.2)}>
+                {fromDatabase ? (
+                  <PublishedBadge photo={g.photo} name={g.name} />
+                ) : (
+                  <MiniBadge photo={g.photo} name={g.name} />
+                )}
+              </Reveal>
+            ))}
+          </div>
+        )}
       </div>
     </section>
+  );
+}
+
+function PublishedBadge({ photo, name }: { photo: string; name: string }) {
+  return (
+    <figure className="overflow-hidden border border-white/10 bg-black">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={photo}
+        alt={name ? `Badge de ${name}` : "Badge J’y serai"}
+        className="aspect-[4/5] w-full object-cover"
+      />
+      {name ? (
+        <figcaption className="bg-white py-2 text-center text-xs font-medium text-black">
+          {name}
+        </figcaption>
+      ) : null}
+    </figure>
   );
 }
 
@@ -39,7 +76,8 @@ function MiniBadge({ photo, name }: { photo: string; name: string }) {
       <div className="px-4 pt-2">
         <p className="font-display text-sm font-bold text-white">Cursor Bénin</p>
         <p className="font-display text-lg font-bold leading-none">
-          <span className="text-cursor-orange">Meetup</span> <span className="text-white">2026</span>
+          <span className="text-cursor-orange">Meetup</span>{" "}
+          <span className="text-white">2026</span>
         </p>
         <div className="mt-1.5 h-1 w-20 bg-cursor-orange" />
       </div>
@@ -49,7 +87,11 @@ function MiniBadge({ photo, name }: { photo: string; name: string }) {
           style={{ borderRadius: "0 1.5rem 0 1.5rem" }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={photo} alt={`Badge de ${name}`} className="h-full w-full object-cover" />
+          <img
+            src={photo}
+            alt={`Badge de ${name}`}
+            className="h-full w-full object-cover"
+          />
         </div>
         <div>
           <p className="font-script text-3xl text-white">J’y serai</p>
