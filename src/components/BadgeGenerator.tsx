@@ -11,6 +11,7 @@ import {
 import { toPng } from "html-to-image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { event } from "@/data/event";
+import { photoFileToDataUrl } from "@/lib/photo";
 import { lumaQrDataUrl } from "@/lib/qr";
 import { publishBadge } from "@/lib/supabase";
 import { Reveal } from "./Reveal";
@@ -18,6 +19,7 @@ import { Reveal } from "./Reveal";
 export function BadgeGenerator() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [converting, setConverting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [pendingDataUrl, setPendingDataUrl] = useState<string | null>(null);
@@ -41,33 +43,47 @@ export function BadgeGenerator() {
     };
   }, []);
 
-  const onFile = (file: File | null) => {
+  const onFile = async (file: File | null) => {
     setError(null);
     setPublishMsg(null);
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setError("Choisis une image (JPG, PNG, WebP).");
-      return;
-    }
-    if (file.size > 8 * 1024 * 1024) {
-      setError("Image trop lourde (max 8 Mo).");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = typeof reader.result === "string" ? reader.result : null;
+
+    setConverting(true);
+    try {
+      const dataUrl = await photoFileToDataUrl(file);
       setPhoto((prev) => {
         if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
-        return result;
+        return dataUrl;
       });
-    };
-    reader.onerror = () => setError("Impossible de lire l’image.");
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("photo convert failed", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Impossible de lire cette photo (HEIC/JPG). Réessaie.",
+      );
+    } finally {
+      setConverting(false);
+    }
   };
 
   const captureBadge = useCallback(async () => {
     if (!badgeRef.current) throw new Error("Badge introuvable");
-    // Wait a frame so fonts/images settle
+    // Ensure embedded photo is painted before rasterizing
+    const imgs = badgeRef.current.querySelectorAll("img");
+    await Promise.all(
+      Array.from(imgs).map(
+        (img) =>
+          new Promise<void>((resolve) => {
+            if (img.complete && img.naturalWidth > 0) {
+              resolve();
+              return;
+            }
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+          }),
+      ),
+    );
     await new Promise((r) => requestAnimationFrame(() => r(null)));
     return toPng(badgeRef.current, {
       cacheBust: true,
@@ -77,7 +93,6 @@ export function BadgeGenerator() {
       preferredFontFormat: "woff2",
       filter: (node) => {
         if (!(node instanceof HTMLElement)) return true;
-        // Skip broken external nodes if any
         return !node.dataset?.skipExport;
       },
     });
@@ -153,13 +168,23 @@ export function BadgeGenerator() {
             <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/25 bg-white/[0.03] px-6 py-14 transition hover:border-cursor-orange/60">
               <ImageIcon size={36} className="text-cursor-orange" />
               <span className="text-center text-sm text-white/80">
-                Clique pour choisir une photo portrait
+                {converting
+                  ? "Conversion de la photo…"
+                  : "Clique pour choisir une photo portrait"}
+              </span>
+              <span className="text-center text-xs text-white/45">
+                JPG, PNG, WebP ou HEIC (iPhone)
               </span>
               <input
                 type="file"
-                accept="image/*"
+                accept="image/*,.heic,.heif,image/heic,image/heif"
                 className="sr-only"
-                onChange={(e) => onFile(e.target.files?.[0] ?? null)}
+                disabled={converting}
+                onChange={(e) => {
+                  const f = e.target.files?.[0] ?? null;
+                  void onFile(f);
+                  e.target.value = "";
+                }}
               />
             </label>
             {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
@@ -168,12 +193,16 @@ export function BadgeGenerator() {
             )}
             <button
               type="button"
-              disabled={!photo || busy || !qrDataUrl}
+              disabled={!photo || busy || converting || !qrDataUrl}
               onClick={download}
               className="mt-5 inline-flex items-center gap-2 rounded-md bg-cursor-orange px-5 py-3 text-sm font-semibold text-black transition enabled:hover:brightness-110 enabled:active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <DownloadSimple size={18} weight="bold" />
-              {busy ? "Préparation…" : "Télécharger mon badge"}
+              {busy
+                ? "Préparation…"
+                : converting
+                  ? "Conversion…"
+                  : "Télécharger mon badge"}
             </button>
           </Reveal>
 
