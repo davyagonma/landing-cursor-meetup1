@@ -13,6 +13,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { event } from "@/data/event";
 import { photoFileToDataUrl } from "@/lib/photo";
 import { lumaQrDataUrl } from "@/lib/qr";
+import { renderJySeraiBadgePng } from "@/lib/renderBadgePng";
 import { publishBadge } from "@/lib/supabase";
 import { Reveal } from "./Reveal";
 
@@ -68,8 +69,19 @@ export function BadgeGenerator() {
   };
 
   const captureBadge = useCallback(async () => {
+    if (!photo || !qrDataUrl) throw new Error("Photo ou QR manquant");
+
+    // Primary path: canvas render (reliable on iOS Safari with HEIC→JPEG)
+    try {
+      return await renderJySeraiBadgePng({
+        photoDataUrl: photo,
+        qrDataUrl,
+      });
+    } catch (canvasErr) {
+      console.warn("canvas badge render failed, fallback html-to-image", canvasErr);
+    }
+
     if (!badgeRef.current) throw new Error("Badge introuvable");
-    // Ensure embedded photo is painted before rasterizing
     const imgs = badgeRef.current.querySelectorAll("img");
     await Promise.all(
       Array.from(imgs).map(
@@ -96,21 +108,25 @@ export function BadgeGenerator() {
         return !node.dataset?.skipExport;
       },
     });
-  }, []);
+  }, [photo, qrDataUrl]);
 
   const download = useCallback(async () => {
-    if (!badgeRef.current || !photo) return;
+    if (!photo || !qrDataUrl) return;
     setBusy(true);
     setError(null);
     setPublishMsg(null);
     try {
       const dataUrl = await captureBadge();
+      // Blob URL is more reliable than huge data: URLs on iOS Safari
+      const blob = await (await fetch(dataUrl)).blob();
+      const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = dataUrl;
+      a.href = objectUrl;
       a.download = "cursor-benin-jy-serai.png";
       document.body.appendChild(a);
       a.click();
       a.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 2000);
       setPendingDataUrl(dataUrl);
       setShowPublishModal(true);
     } catch (err) {
@@ -119,7 +135,7 @@ export function BadgeGenerator() {
     } finally {
       setBusy(false);
     }
-  }, [photo, captureBadge]);
+  }, [photo, qrDataUrl, captureBadge]);
 
   const handlePublishChoice = async (isPublic: boolean) => {
     if (!pendingDataUrl) {

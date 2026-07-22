@@ -32,11 +32,11 @@ function fileToDataUrl(file: Blob): Promise<string> {
   });
 }
 
-/** Downscale large photos so html-to-image stays reliable on mobile */
+/** Downscale large photos so export stays reliable on mobile */
 async function jpegDataUrlFromBitmap(
   source: CanvasImageSource,
-  maxEdge = 1600,
-  quality = 0.92,
+  maxEdge = 1200,
+  quality = 0.9,
 ): Promise<string> {
   const width =
     "naturalWidth" in source && typeof source.naturalWidth === "number"
